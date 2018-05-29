@@ -10,6 +10,10 @@ Simply add this line to your HTML file:
 <script src="https://cdn.rawgit.com/firefalcom/bilt/master/src/bilt.js"></script>
 ```
 
+## Live Demo
+
+[Test it here](https://cdn.rawgit.com/firefalcom/bilt/master/test/test.html)
+
 ## Screenshot
 
 ![screenshot](https://raw.githubusercontent.com/firefalcom/bilt/master/screenshot.png)
