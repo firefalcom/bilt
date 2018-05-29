@@ -1,17 +1,8 @@
 'use strict';
 
-const Position = {
-  TOP : 0,
-  RIGHT : 1,
-  BOTTOM : 2,
-  LEFT : 3
-};
-
-const positionTexts = [ "top", "right", "bottom", "left" ];
-
 let controlFrame = null;
 
-let context = {target : null, borderImageSlice : []};
+let context = {target : null, properties : {borderImageSlice : []}};
 
 document.addEventListener('click', function(e) {
   let target = e.target || e.srcElement;
@@ -65,19 +56,31 @@ controlFrame.onmouseup = function(e) {
   return false;
 };
 controlFrame.style = `
-    width:400px;
-    height:400px;
-    background:#888;
-    position:absolute;
+  width:256px;
+  height:400px;
+  background:#BBB;
+  position:absolute;
+  border:solid 2px black;
+  font-size:13px;
 `;
 controlFrame.setAttribute("class", "biltMovable");
 
 controlFrame.innerHTML = `
- <span id="biltName" class="biltMovable">?</span>
- <input type="range" min="1" max="100" value="50" id="biltSlice0">
- <input type="range" min="1" max="100" value="50" id="biltSlice1">
- <input type="range" min="1" max="100" value="50" id="biltSlice2">
- <input type="range" min="1" max="100" value="50" id="biltSlice3">
+  <b><span class="biltMovable">BorderImageLiveTweaker</span></b>
+  <hr/>
+  <span class="biltMovable">Selected: </span>
+  <span id="biltName" class="biltMovable">?</span>
+  <hr/>
+  <span class="biltMovable">border-image-slice</span>
+  <div style="position:relative; width:128px; height:128px">
+    <input type="range" min="1" max="100" value="50" id="biltSlice0">
+    <input type="range" min="1" max="100" value="50" id="biltSlice1">
+    <input type="range" min="1" max="100" value="50" id="biltSlice2">
+    <input type="range" min="1" max="100" value="50" id="biltSlice3">
+  </div>
+  <hr/>
+  <textarea id="biltOutput" style="width:95%; height:100px; resize:none; font-size:10px;" readonly>
+  </textarea>
 `;
 
 function setup(cs, target) {
@@ -96,18 +99,23 @@ function setupSliders(cs, target, propertyName, propertyNameCamelCase) {
 function setupSlider(cs, target, propertyName, propertyNameCamelCase,
                      position) {
   let elem = document.getElementById("biltSlice" + position);
+  elem.style = `
+    width:64px;
+    height:16px;
+  `;
   elem.style.position = "absolute";
-  elem.style.top = "150px";
+  elem.style.top = "64px";
   elem.style.left = "0";
-  elem.style.transform = "rotate(" + (90 + (90 * position)) +"deg)";
+  elem.style.transform = "rotate(" + (90 + (90 * position)) + "deg)";
   elem.style.transformOrigin = "100% 50%";
   let value = getPropertyValue(cs, propertyName, position);
-  context[propertyNameCamelCase][position] = value;
+  context.properties[propertyNameCamelCase][position] = value;
   elem.value = value;
   elem.oninput = function(e) {
-    let v = context[propertyNameCamelCase];
+    let v = context.properties[propertyNameCamelCase];
     v[position] = elem.value;
     target.style[propertyNameCamelCase] = v.join(' ');
+    updateOutput();
   };
 }
 
@@ -120,4 +128,16 @@ function getPropertyValue(cs, propertyName, position) {
   }
 
   return value;
+}
+
+function updateOutput() {
+  let elem = document.getElementById("biltOutput");
+  let content = "";
+  content += getOutput("border-image-slice", "borderImageSlice");
+  elem.innerHTML = content;
+}
+
+function getOutput(propertyName, propertyNameCamelCase) {
+  let v = context.properties[propertyNameCamelCase];
+  return propertyName + ": " + v.join(' ') + ";";
 }
