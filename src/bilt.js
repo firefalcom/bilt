@@ -1,8 +1,11 @@
 'use strict';
 
+const supportedProperties = [
+  {name : "borderImageSlice", cssName : "border-image-slice", unit : ""},
+  {name : "borderImageWidth", cssName : "border-image-width", unit : "px"}
+];
 let controlFrame = null;
-
-let context = {target : null, properties : {borderImageSlice : []}};
+let context = {properties : {}};
 
 document.addEventListener('click', function(e) {
   let target = e.target || e.srcElement;
@@ -12,26 +15,6 @@ document.addEventListener('click', function(e) {
   }
 }, false);
 
-document.onkeydown = function(e) {
-  if (context.target == null) {
-    return;
-  }
-
-  switch (e.keyCode) {
-  case 37:
-    alert('left');
-    break;
-  case 38:
-    alert('up');
-    break;
-  case 39:
-    alert('right');
-    break;
-  case 40:
-    alert('down');
-    break;
-  }
-};
 let x_elem = 0, y_elem = 0, moving = false;
 controlFrame = document.createElement("div");
 controlFrame.onmousedown = function(e) {
@@ -56,7 +39,7 @@ controlFrame.onmouseup = function(e) {
   return false;
 };
 controlFrame.style = `
-  width:256px;
+  width:268px;
   height:400px;
   background:#BBB;
   position:absolute;
@@ -71,12 +54,7 @@ controlFrame.innerHTML = `
   <span class="biltMovable">Selected: </span>
   <span id="biltName" class="biltMovable">?</span>
   <hr/>
-  <span class="biltMovable">border-image-slice</span>
-  <div style="position:relative; width:128px; height:128px">
-    <input type="range" min="1" max="100" value="50" id="biltSlice0">
-    <input type="range" min="1" max="100" value="50" id="biltSlice1">
-    <input type="range" min="1" max="100" value="50" id="biltSlice2">
-    <input type="range" min="1" max="100" value="50" id="biltSlice3">
+  <div id="biltContent">
   </div>
   <hr/>
   <textarea id="biltOutput" style="width:95%; height:100px; resize:none; font-size:10px;" readonly>
@@ -87,18 +65,49 @@ function setup(cs, target) {
   document.body.appendChild(controlFrame);
   let elem = document.getElementById("biltName");
   elem.innerHTML = target.tagName + " " + target.className + " " + target.id;
-  setupSliders(cs, target, "border-image-slice", "borderImageSlice");
+  document.getElementById("biltContent").innerHTML = "";
+
+  for (let prop of supportedProperties) {
+    setupSliders(cs, target, prop.cssName, prop.name);
+  }
+
+  updateOutput();
 }
 
 function setupSliders(cs, target, propertyName, propertyNameCamelCase) {
+  let parent = document.createElement("div");
+  let group = document.createElement("div");
+
+  context.properties[propertyNameCamelCase] = [];
+
+  parent.style = `
+    display:inline-block;
+  `;
+
+  group.style = `
+    position:relative;
+    display:block;
+    width: 128px;
+    height: 128px;
+  `;
+
   for (let i = 0; i < 4; ++i) {
-    setupSlider(cs, target, propertyName, propertyNameCamelCase, i);
+    let elem = setupSlider(cs, target, propertyName, propertyNameCamelCase, i);
+    group.appendChild(elem);
   }
+
+  parent.append(propertyName);
+  parent.appendChild(group);
+
+  document.getElementById("biltContent").appendChild(parent);
 }
 
 function setupSlider(cs, target, propertyName, propertyNameCamelCase,
                      position) {
-  let elem = document.getElementById("biltSlice" + position);
+  let elem = document.createElement("input");
+  elem.setAttribute("type", "range");
+  elem.setAttribute("min", "0");
+  elem.setAttribute("max", "100");
   elem.style = `
     width:64px;
     height:16px;
@@ -109,6 +118,7 @@ function setupSlider(cs, target, propertyName, propertyNameCamelCase,
   elem.style.transform = "rotate(" + (90 + (90 * position)) + "deg)";
   elem.style.transformOrigin = "100% 50%";
   let value = getPropertyValue(cs, propertyName, position);
+  value = parseInt(value, 10);
   context.properties[propertyNameCamelCase][position] = value;
   elem.value = value;
   elem.oninput = function(e) {
@@ -117,6 +127,7 @@ function setupSlider(cs, target, propertyName, propertyNameCamelCase,
     target.style[propertyNameCamelCase] = v.join(' ');
     updateOutput();
   };
+  return elem;
 }
 
 function getPropertyValue(cs, propertyName, position) {
@@ -133,11 +144,13 @@ function getPropertyValue(cs, propertyName, position) {
 function updateOutput() {
   let elem = document.getElementById("biltOutput");
   let content = "";
-  content += getOutput("border-image-slice", "borderImageSlice");
+  for (let prop of supportedProperties) {
+    content += getOutput(prop.cssName, prop.name, prop.unit) + "\n";
+  }
   elem.innerHTML = content;
 }
 
-function getOutput(propertyName, propertyNameCamelCase) {
+function getOutput(propertyName, propertyNameCamelCase, unit) {
   let v = context.properties[propertyNameCamelCase];
-  return propertyName + ": " + v.join(' ') + ";";
+  return propertyName + ": " + v.join(unit + ' ') + unit + ";";
 }
