@@ -71,12 +71,7 @@ controlFrame.innerHTML = `
   <span class="biltMovable">Selected: </span>
   <span id="biltName" class="biltMovable">?</span>
   <hr/>
-  <span class="biltMovable">border-image-slice</span>
-  <div style="position:relative; width:128px; height:128px">
-    <input type="range" min="1" max="100" value="50" id="biltSlice0">
-    <input type="range" min="1" max="100" value="50" id="biltSlice1">
-    <input type="range" min="1" max="100" value="50" id="biltSlice2">
-    <input type="range" min="1" max="100" value="50" id="biltSlice3">
+  <div id="biltContent">
   </div>
   <hr/>
   <textarea id="biltOutput" style="width:95%; height:100px; resize:none; font-size:10px;" readonly>
@@ -87,18 +82,35 @@ function setup(cs, target) {
   document.body.appendChild(controlFrame);
   let elem = document.getElementById("biltName");
   elem.innerHTML = target.tagName + " " + target.className + " " + target.id;
+  document.getElementById("biltContent").innerHTML = "";
   setupSliders(cs, target, "border-image-slice", "borderImageSlice");
 }
 
 function setupSliders(cs, target, propertyName, propertyNameCamelCase) {
+  let group = document.createElement("div");
+  group.style = `
+    position:relative;
+    display:inline-block;
+    width: 128px;
+    height: 128px;
+  `;
+
+  group.append(propertyName);
+
   for (let i = 0; i < 4; ++i) {
-    setupSlider(cs, target, propertyName, propertyNameCamelCase, i);
+    let elem = setupSlider(cs, target, propertyName, propertyNameCamelCase, i);
+    group.appendChild(elem);
   }
+
+  document.getElementById("biltContent").appendChild(group);
 }
 
 function setupSlider(cs, target, propertyName, propertyNameCamelCase,
                      position) {
-  let elem = document.getElementById("biltSlice" + position);
+  let elem = document.createElement("input");
+  elem.setAttribute("type", "range");
+  elem.setAttribute("min", "0");
+  elem.setAttribute("max", "100");
   elem.style = `
     width:64px;
     height:16px;
@@ -117,6 +129,7 @@ function setupSlider(cs, target, propertyName, propertyNameCamelCase,
     target.style[propertyNameCamelCase] = v.join(' ');
     updateOutput();
   };
+  return elem;
 }
 
 function getPropertyValue(cs, propertyName, position) {
