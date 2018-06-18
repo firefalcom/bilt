@@ -51,6 +51,7 @@ controlFrame.style = `
   position:absolute;
   border:solid 2px black;
   font-size:14px;
+  z-index:1000;
 `;
 controlFrame.setAttribute("class", "biltMovable");
 
