@@ -2,7 +2,13 @@
 
 const supportedProperties = [
   {name : "borderImageSlice", cssName : "border-image-slice", unit : ""},
-  {name : "borderImageWidth", cssName : "border-image-width", unit : "px"}
+  {name : "borderImageWidth", cssName : "border-image-width", unit : "px"},
+  {name : "borderImageOutset", cssName : "border-image-outset", unit : "px"}, {
+    name : "borderImageRepeat",
+    cssName : "border-image-repeat",
+    values : [ "stretch", "repeat", "round" ],
+    valuesCount : 2
+  }
 ];
 let controlFrame = null;
 let context = {properties : {}};
@@ -39,12 +45,12 @@ controlFrame.onmouseup = function(e) {
   return false;
 };
 controlFrame.style = `
-  width:268px;
+  width:430px;
   height:400px;
   background:#BBB;
   position:absolute;
   border:solid 2px black;
-  font-size:13px;
+  font-size:14px;
 `;
 controlFrame.setAttribute("class", "biltMovable");
 
@@ -57,21 +63,42 @@ controlFrame.innerHTML = `
   <div id="biltContent">
   </div>
   <hr/>
-  <textarea id="biltOutput" style="width:95%; height:100px; resize:none; font-size:10px;" readonly>
+  <textarea id="biltOutput" style="width:95%; height:100px; resize:none; font-size:10px;">
   </textarea>
 `;
 
+let firstTime = true;
+
 function setup(cs, target) {
+  context.target = target;
   document.body.appendChild(controlFrame);
   let elem = document.getElementById("biltName");
   elem.innerHTML = target.tagName + " " + target.className + " " + target.id;
   document.getElementById("biltContent").innerHTML = "";
 
   for (let prop of supportedProperties) {
-    setupSliders(cs, target, prop.cssName, prop.name);
+    if (prop.values == null) {
+      setupSliders(cs, target, prop.cssName, prop.name);
+    }
+  }
+  for (let prop of supportedProperties) {
+    if (prop.values != null) {
+      setupSelectValues(cs, target, prop);
+    }
   }
 
   updateOutput();
+
+  if (firstTime) {
+    let textArea = document.getElementById("biltOutput");
+    textArea.addEventListener("input", function(e) {
+      target.style = textArea.value;
+      var cs = window.getComputedStyle(target, null);
+      setup(cs, target);
+      textArea.focus();
+    });
+    firstTime = false;
+  }
 }
 
 function setupSliders(cs, target, propertyName, propertyNameCamelCase) {
@@ -82,6 +109,7 @@ function setupSliders(cs, target, propertyName, propertyNameCamelCase) {
 
   parent.style = `
     display:inline-block;
+    margin: 0 3px 20px 3px;
   `;
 
   group.style = `
@@ -134,7 +162,7 @@ function getPropertyValue(cs, propertyName, position) {
   let value = cs.getPropertyValue(propertyName);
   let values = value.split(" ");
 
-  if (values.length == 4) {
+  if (values.length > 1) {
     return values[position];
   }
 
@@ -145,7 +173,11 @@ function updateOutput() {
   let elem = document.getElementById("biltOutput");
   let content = "";
   for (let prop of supportedProperties) {
-    content += getOutput(prop.cssName, prop.name, prop.unit) + "\n";
+    if (prop.values == null) {
+      content += getOutput(prop.cssName, prop.name, prop.unit) + "\n";
+    } else {
+      content += getSelectOutput(prop) + "\n";
+    }
   }
   elem.innerHTML = content;
 }
@@ -153,4 +185,45 @@ function updateOutput() {
 function getOutput(propertyName, propertyNameCamelCase, unit) {
   let v = context.properties[propertyNameCamelCase];
   return propertyName + ": " + v.join(unit + ' ') + unit + ";";
+}
+
+function getSelectOutput(prop) {
+  let v = context.properties[prop.name];
+  return prop.cssName + ": " + v.join(' ') + ";";
+}
+
+function setupSelectValues(cs, target, prop) {
+
+  let parent = document.createElement("div");
+
+  context.properties[prop.name] = [];
+
+  parent.style = `
+    display:inline-block;
+    margin: 0 3px 3px 3px;
+  `;
+
+  parent.append(prop.name);
+
+  for (let i = 0; i < prop.valuesCount; ++i) {
+    let select = document.createElement("select");
+    let currentValue = getPropertyValue(cs, prop.cssName, i);
+    for (let value of prop.values) {
+      let option = document.createElement("option");
+      option.setAttribute("value", value);
+      option.innerHTML = value;
+      select.appendChild(option);
+    }
+    parent.appendChild(select);
+    select.value = currentValue;
+    let v = context.properties[prop.name];
+    v[i] = currentValue;
+    select.addEventListener("change", function() {
+      v[i] = select.value;
+      target.style[prop.name] = v.join(' ');
+      updateOutput();
+    });
+  }
+
+  document.getElementById("biltContent").appendChild(parent);
 }
