@@ -7,7 +7,7 @@ This helps UI designers to tweak the border-image CSS properties in a live appli
 
 Simply add this line to your HTML file:
 ```html
-<script src="https://cdn.rawgit.com/firefalcom/bilt/master/src/bilt.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/firefalcom/bilt@master/src/bilt.js"></script>
 ```
 
 ## Live Demo
